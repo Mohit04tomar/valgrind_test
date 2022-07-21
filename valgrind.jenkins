@@ -1,0 +1,40 @@
+
+
+pipeline{
+    agent any
+    stages{
+        stage("Checkout"){
+            steps{
+                echo "Cloning GitHub Repo"
+                git branch: 'FOGL-6366.aj', credentialsId: '092cf8c3-544f-4236-8aff-89963fbcdd24', url: 'https://github.com/fledge-iot/fledge.git'
+            }
+        }
+        stage("Generating Valgrind Report"){
+            steps{
+                echo "Generating Valgrind XML Report"
+                sh '''whoami
+                cd tests/system/memory_leak
+                sh -x test_memory_leak.sh '''
+            }
+        }
+    }
+    post{
+        always{
+            echo "Publishing Report"
+            publishValgrind (
+                failBuildOnInvalidReports: true,
+                failBuildOnMissingReports: true,
+                failThresholdDefinitelyLost: '',
+                failThresholdInvalidReadWrite: '',
+                failThresholdTotal: '',
+                pattern: '**/**_valgrind_*.xml',
+                publishResultsForAbortedBuilds: false,
+                publishResultsForFailedBuilds: true,
+                sourceSubstitutionPaths: '',
+                unstableThresholdDefinitelyLost: '',
+                unstableThresholdInvalidReadWrite: '',
+                unstableThresholdTotal: ''
+            )
+        }
+    }
+}
